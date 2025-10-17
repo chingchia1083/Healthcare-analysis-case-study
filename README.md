@@ -71,8 +71,13 @@ The raw data, initially spread across multiple CSV files with varying granularit
 ### 🔹 Encounter Analysis
 
 #### 1. Encounter Volume & Trends
-- Encounter volume analyzed by **month, quarter, and year**
-- Trend identification for **growth or decline**
+- How many total encounters occured each year?
+  ```sql
+SELECT EXTRACT(YEAR FROM START) AS yr, EXTRACT(MONTH FROM START) AS mo, count(Id)
+FROM `maven_db.encounters`
+GROUP BY 1,2
+ORDER BY 1,2;
+```
 - **Encounter type** distribution (inpatient, outpatient, emergency, etc.) by year
 
 🖼️ *Placeholder for Tableau Chart 1 – Encounter Volume by Year*  
