@@ -1,68 +1,81 @@
 # 🏥 Healthcare Analytics Case Study
 
 ## 📘 Introduction
-A healthcare analytics consulting firm requested an analysis to help hospitals use data to **improve patient care and reduce costs**.  
-The insights from this project support better operational planning and data-driven healthcare decisions.
+This project was completed as part of a healthcare analytics engagement.  
+The goal was to provide **data-driven insights** that help hospitals **improve patient care** and **reduce operational costs**.
 
 ---
 
-## 🎯 Business Task (Ask)
-**Objective:**  
-Analyze patient encounters, costs, coverage, and behavior trends to identify improvement opportunities in care and operations.
+## 🎯 Business Objective
+**Task:** Analyze patient encounters, costs, coverage, and behavioral trends to support hospital planning and improve care outcomes.
 
 **Key Stakeholders:**  
-- Hospital management  
-- Healthcare analysts  
-- Financial and operational planning teams  
+- Hospital Operations Teams  
+- Healthcare Administrators  
+- Data Strategy & Analytics Team  
 
 ---
 
-## 🧩 Data Collection and Preparation
+## 🧩 Data Collection & Preparation
 
 **Data Source:**  
-Public Fitbit activity data from a Bellabeat competitor — [Kaggle Dataset](https://www.kaggle.com/datasets/arashnic/fitbit)
+[Data Drills – Maven Analytics](https://mavenanalytics.io/data-drills)
 
-**Storage & Environment:**  
-Data was uploaded and stored in **Google BigQuery**.
+**Storage:**  
+Data was imported and stored in **Google BigQuery**.
 
 **Data Format:**  
-Data is in **long format**, meaning each row represents one variable observation with multiple identifying columns.  
-No unpivoting was required prior to analysis.
+The dataset is organized in **long format**, where each row represents a single observation with columns identifying variables or categories. This structure allows for efficient analysis without additional unpivoting.
 
-**Tools Used:**
-- **BigQuery** – for data preparation and transformation  
-- **Tableau** – for visualization and insights  
-
----
-
-## 🧠 Data Reliability (ROCCC Framework)
-To ensure that the data was **complete, consistent, accurate, and reliable**, the following validation steps were performed before analysis.
-
-### ✅ Data Integrity Checks
-- **Duplicate check:**  
-  Verified no duplicate patient names in the `patients` table (assumed unique identifiers).  
-- **Missing values:**  
-  Identified and handled NULLs across key tables.  
-- **Outliers:**  
-  Example – `total_claim_cost` should never be negative.  
-- **Totals cross-check:**  
-  Compared aggregated totals against expectations or historical patterns (where available).
+**Tools Used:**  
+- **BigQuery:** Data cleaning, validation, transformation  
+- **Power BI:** Visualization and dashboard creation  
 
 ---
 
-## 🗂️ Data Management and Standardization
-The raw data, initially spread across multiple CSV files with varying granularities (day, hour, minute), was imported into a **secure Google Cloud environment**.
+## ✅ Data Integrity & Quality Checks
+Before analysis, the dataset was validated for completeness, consistency, and reliability.
 
-### Key Data Preparation Steps:
-1. **File Standardization:**  
-   Files renamed using a standardized format  
-   ```
-   YYYYMM_DataType_Granularity.csv
-   ```
-2. **Data Cleaning & Unification:**  
-   All cleaning, joining, and aggregation were done using **SQL in BigQuery** for scalability.
-3. **Validation:**  
-   Ensured data completeness and consistency before analysis.
+### 1. Check for Duplicate Records  
+To confirm each patient has a unique name:
+
+```sql
+SELECT
+  Last,
+  First,
+  COUNT(*) AS row_count
+FROM `maven_db.patients`
+GROUP BY 1, 2
+HAVING COUNT(*) > 1;
+```
+
+### 2. Check for Missing Values
+Identify any `NULL` values in key fields:
+
+```sql
+SELECT
+  COUNTIF(Patient IS NULL) AS null_patient,
+  COUNTIF(Organization IS NULL) AS null_organization,
+  COUNTIF(Payer IS NULL) AS null_payer
+FROM `maven_db.patients`;
+```
+
+### 3. Check for Outliers
+Ensure claim costs are valid (non-negative):
+
+```sql
+SELECT *
+FROM `maven_db.patients`
+WHERE TOTAL_CLAIM_COST < 0;
+```
+
+### 4. Validate Totals
+Summarize total claim costs for comparison:
+
+```sql
+SELECT SUM(TOTAL_CLAIM_COST) AS total_claimed_cost
+FROM `maven_db.patients`;
+```
 
 ---
 
@@ -70,97 +83,180 @@ The raw data, initially spread across multiple CSV files with varying granularit
 
 ### 🔹 Encounter Analysis
 
-#### 1. Encounter Volume & Trends
-## 🧾 Example SQL Snippet
+#### Encounter Volume & Trends
+Encounters per month, quarter, and year:
+
 ```sql
-SELECT 
+SELECT
   EXTRACT(YEAR FROM START) AS yr,
   EXTRACT(MONTH FROM START) AS mo,
-  count(Id)
+  COUNT(Id)
 FROM `maven_db.encounters`
-GROUP BY 1,2
-ORDER BY 1,2;
+GROUP BY 1, 2
+ORDER BY 1, 2;
+```
 
-🖼️ *Placeholder for Tableau Chart 1 – Encounter Volume by Year*  
-![Encounter Volume Chart](images/encounter_volume_chart.png)
+#### Encounter Class Distribution
+Percentage of encounters by class (ambulatory, outpatient, wellness, urgent care, emergency, inpatient):
 
-#### 2. Cost & Coverage Insights
-- Percentage of encounters with **zero payer coverage**
-- **Top 10 most frequent procedures** and their **average base cost**
-- **Average total claim cost** per payer
-
-🖼️ *Placeholder for Tableau Chart 2 – Cost & Coverage Dashboard*  
-![Cost and Coverage Dashboard](images/cost_coverage_dashboard.png)
-
----
-
-### 🔹 Length of Stay (LOS) Analysis
-Calculated **average LOS (hours)** by encounter class (ambulatory, inpatient, outpatient), grouped by **patient age and gender**.
-
-#### Key Findings:
-- **Males aged 31–40**: Highest average LOS in ambulatory encounters (~449 hrs)
-- **Males aged 41–50**: Also elevated ambulatory LOS (~230 hrs)
-- **Females aged 31–40**: Much lower ambulatory LOS (~96 hrs)
-- **Females aged 51–100+**: Moderate inpatient LOS (~25–84 hrs)
-- Overall: **Males 31–40** are primary drivers of high ambulatory LOS.
-
-🖼️ *Placeholder for Tableau Chart 3 – LOS by Age & Gender*  
-![LOS by Age Gender Chart](images/los_by_age_gender.png)
-
----
-
-### 🔹 Readmissions & Follow-Up Visits
-- **Goal:** Identify how many patients were readmitted within 30 days of a prior encounter.
-- **Method:**  
-  Used SQL **window functions** (`LEAD`) to calculate the interval between two admission dates.
-- **Follow-up Analysis:**  
-  - Created a subquery to count total 30-day readmissions  
-  - Used filters to identify specific patients with multiple readmissions
-
-🖼️ *Placeholder for Tableau Chart 4 – Readmission Trends*  
-![Readmission Trends Chart](images/readmission_trends.png)
-
----
-
-## ⚙️ Tools & Technologies
-| Tool | Purpose |
-|------|----------|
-| **Google BigQuery** | Data storage, cleaning, and SQL transformations |
-| **Tableau** | Visualization and dashboarding |
-| **SQL** | Data joins, aggregations, and KPI logic |
-
----
-
-## 🧾 Example SQL Snippet
 ```sql
 SELECT 
-  patient_id,
-  encounter_class,
-  AVG(length_of_stay_hours) AS avg_los
-FROM `healthcare.encounters`
-GROUP BY patient_id, encounter_class
-ORDER BY avg_los DESC;
+  EXTRACT(YEAR FROM START) AS year,
+  COUNT(CASE WHEN ENCOUNTERCLASS = 'ambulatory' THEN Id END) AS ambulatory,
+  COUNT(CASE WHEN ENCOUNTERCLASS = 'outpatient' THEN Id END) AS outpatient,
+  COUNT(CASE WHEN ENCOUNTERCLASS = 'wellness' THEN Id END) AS wellness,
+  COUNT(CASE WHEN ENCOUNTERCLASS = 'urgentcare' THEN Id END) AS urgentcare,
+  COUNT(CASE WHEN ENCOUNTERCLASS = 'emergency' THEN Id END) AS emergency,
+  COUNT(CASE WHEN ENCOUNTERCLASS = 'inpatient' THEN Id END) AS inpatient,
+  COUNT(*) AS total_encounters
+FROM `maven_db.encounters`
+GROUP BY 1
+ORDER BY 1;
+```
+
+---
+
+### 💰 Cost & Coverage Insights
+
+#### Zero Payer Coverage
+Identify encounters with no payer coverage and their share of total encounters:
+
+```sql
+SELECT
+  SUM(CASE WHEN PAYER_COVERAGE = 0 THEN 1 ELSE 0 END) AS zero_payer_coverage,
+  COUNT(*) AS total_encounters,
+  ROUND(SUM(CASE WHEN PAYER_COVERAGE = 0 THEN 1 ELSE 0 END) / COUNT(*), 2) AS pct_zero_payer_coverage
+FROM `maven_db.encounters`;
+```
+
+#### Top 10 Procedures by Frequency
+List the most common procedures and their average base cost:
+
+```sql
+SELECT 
+  DESCRIPTION, 
+  COUNT(*) AS num_procedures, 
+  ROUND(AVG(BASE_COST)) AS base_cost
+FROM `maven_db.procedures`
+GROUP BY 1
+ORDER BY num_procedures DESC
+LIMIT 10;
+```
+
+#### Average Claim Cost by Payer
+Compare average total claim costs across payers:
+
+```sql
+SELECT 
+  pa.NAME, 
+  AVG(en.TOTAL_CLAIM_COST) AS avg_total_claim_cost
+FROM `maven_db.encounters` en
+LEFT JOIN `maven_db.payers` pa
+  ON en.PAYER = pa.Id
+GROUP BY 1
+ORDER BY avg_total_claim_cost DESC;
+```
+
+#### Top 10 Procedures by Cost
+Identify the highest-cost procedures and their frequency:
+
+```sql
+SELECT 
+  DESCRIPTION, 
+  ROUND(AVG(BASE_COST)) AS base_cost, 
+  COUNT(*) AS num_procedures
+FROM `maven_db.procedures`
+GROUP BY 1
+ORDER BY base_cost DESC
+LIMIT 10;
+```
+
+---
+
+### ⏱️ Length of Stay (LOS) Analysis
+
+This query calculates **average Length of Stay (LOS)** by **encounter class**, broken down by **patient age group** and **gender**.  
+Results show notable patterns — for instance, **males aged 31–40** exhibit significantly longer ambulatory LOS compared to other groups.
+
+*(Dashboard screenshots can be inserted here to visualize findings.)*
+
+---
+
+### 🔁 Readmissions & Follow-up Visits
+
+#### Readmissions Within 30 Days
+Use a window function to calculate readmission intervals per patient:
+
+```sql
+SELECT 
+  COUNT(DISTINCT PATIENT)
+FROM (
+  SELECT 
+    PATIENT,
+    DATE(START) AS cur_start,
+    DATE(STOP) AS cur_admission,
+    DATE(LEAD(START) OVER (PARTITION BY PATIENT ORDER BY START)) AS next_admission,
+    DATE_DIFF(
+      DATE(LEAD(START) OVER (PARTITION BY PATIENT ORDER BY START)),
+      DATE(STOP), 
+      DAY
+    ) AS interval_admission
+  FROM `maven_db.encounters`
+) AS re_admission
+WHERE interval_admission < 30;
+```
+
+#### Most Frequently Readmitted Patients
+
+```sql
+SELECT 
+  PATIENT,
+  COUNT(interval_admission) AS num_readmissions
+FROM (
+  SELECT 
+    PATIENT,
+    DATE(START) AS cur_start,
+    DATE(STOP) AS cur_admission,
+    DATE(LEAD(START) OVER (PARTITION BY PATIENT ORDER BY START)) AS next_admission,
+    DATE_DIFF(
+      DATE(LEAD(START) OVER (PARTITION BY PATIENT ORDER BY START)),
+      DATE(STOP), 
+      DAY
+    ) AS interval_admission
+  FROM `maven_db.encounters`
+) AS re_admission
+GROUP BY 1
+ORDER BY 2 DESC;
+```
+
+#### Patient Details Example
+View encounter history for a specific patient:
+
+```sql
+SELECT *
+FROM `maven_db.encounters`
+WHERE PATIENT = '1712d26d-822d-1e3a-2267-0a9dba31d7c8';
 ```
 
 ---
 
 ## 📈 Key Insights Summary
-- Encounter trends reveal age and gender patterns in healthcare utilization.
-- Coverage analysis highlights gaps in payer participation.
-- High ambulatory LOS for males aged 31–40 suggests potential inefficiencies or data anomalies.
-- Readmission tracking supports hospital care improvement planning.
+- Males aged **31–40** have the **highest average LOS**, especially for **ambulatory** encounters.  
+- Approximately **49% of encounters** had **zero payer coverage**.  
+- The **most common procedures** are relatively low-cost, while a few specialized ones drive the highest average base costs.  
+- A subset of patients shows **multiple readmissions within 30 days**, indicating potential for targeted care interventions.  
 
 ---
 
-## 🏁 Conclusion
-This case study demonstrates how **data engineering (BigQuery)** and **data visualization (Tableau)** combine to deliver actionable insights for healthcare providers.  
-By ensuring data integrity and applying SQL-based analytics, hospitals can better monitor patient behavior, reduce costs, and enhance quality of care.
+## 🛠️ Tools & Technologies
+- **SQL (Google BigQuery)**
+- **Power BI**
+- **Google Cloud Platform**
+- **Data Visualization & Storytelling**
 
 ---
 
-### 👩‍💻 Author
-**Analyst:** *[Your Name]*  
-**Role:** Senior Financial / Data Analyst  
-**Tools:** SQL | BigQuery | Tableau  
-**Repository Type:** Case Study Portfolio  
-
+## 📎 Author
+👤 **Chingchia Yu**  
+Senior Financial Analyst | Data Analytics & BI Specialist  
+📫 *[LinkedIn]( https://www.linkedin.com/in/ching-chia-yu-cpa-a87b78126/)* | *[GitHub](#)*
