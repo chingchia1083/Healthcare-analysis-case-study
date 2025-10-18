@@ -37,7 +37,7 @@ The dataset is organized in **long format**, where each row represents a single 
 Before analysis, the dataset was validated for completeness, consistency, and reliability.
 
 ### 1. Check for Duplicate Records  
-To confirm each patient has a unique name:
+To confirm each patient has a unique name. If any rows show up, that might be duplicates:
 
 ```sql
 SELECT
@@ -71,6 +71,7 @@ WHERE TOTAL_CLAIM_COST < 0;
 
 ### 4. Validate Totals
 Summarize total claim costs for comparison:
+In this case, I don’t have expectations on how much total_claimd_cost for example make sense. However, in other cases, we can use numbers from other system or using historical trend to do comparison. 
 
 ```sql
 SELECT SUM(TOTAL_CLAIM_COST) AS total_claimed_cost
@@ -178,7 +179,45 @@ LIMIT 10;
 This query calculates **average Length of Stay (LOS)** by **encounter class**, broken down by **patient age group** and **gender**.  
 Results show notable patterns — for instance, **males aged 31–40** exhibit significantly longer ambulatory LOS compared to other groups.
 
-*(Dashboard screenshots can be inserted here to visualize findings.)*
+```sql
+WITH LOS_AGE AS(SELECT
+                  DATE_DIFF(CURRENT_DATE(), pt.BIRTHDATE, YEAR) AS age,
+                  pt.GENDER,
+                  en.ENCOUNTERCLASS AS CLASS,
+                  ROUND(AVG(DATE_DIFF(en.STOP, en.START, hour))) AS avg_Length_of_Stay_hours
+                FROM 'maven_db.encounters'en
+                    LEFT JOIN 'maven_db.PATIENTS'PT
+                    ON en.PATIENT = pt.Id
+                    LEFT JOIN 'maven_db.payers'py
+                    ON en.PAYER = pt.Id
+                GROUP BY 1,2,3),
+LOS_AgeGroup AS (SELECT
+                  GENDER,
+                  CLASS,
+                  CASE
+                    WHEN age >=31 AND age <40 THEN '31-40'
+                    WHEN age >=41 AND age <50 THEN '41-50'
+                    WHEN age >=51 AND age <60 THEN '41-60'
+                    WHEN age >=61 AND age <70 THEN '61-70'
+                    WHEN age >=71 AND age <80 THEN '71-80'
+                    WHEN age >=81 AND age <90 THEN '81-90'
+                    WHEN age >=91 AND age <100 THEN '91-100'
+                    WHEN age >100 THEN '>100'
+                    ELSE 'CHECK'
+                    END AS Age_Group,
+                  ROUND(AVG(LOS_AGE.Avg_Length_of_Stay_hours)) DESC)
+SELECT
+  GENDER,
+  Age_Group,
+  SUM(CASE WHEN CLASS = 'ambulatory' THEN AVG_LOS ELSE 0 END) AS ambulatory,
+  SUM(CASE WHEN CLASS = 'inpatient' THEN AVG_LOS ELSE 0 END) AS inpatient,
+  SUM(CASE WHEN CLASS = 'outpatient' THEN AVG_LOS ELSE 0 END) AS outpatient,
+  SUM(AVG_LOS) AS total
+FROM LOS_AgeGroup
+GROUP BY 1,2
+ORDER BY SUM(AVG_LOS) DESC;
+
+```
 
 ---
 
@@ -229,8 +268,8 @@ GROUP BY 1
 ORDER BY 2 DESC;
 ```
 
-#### Patient Details Example
-View encounter history for a specific patient:
+#### Patient Details FOR ABOVE CASE
+Once I know the most frequently readmitted patient, I can use where clause to see more details about this patient:
 
 ```sql
 SELECT *
