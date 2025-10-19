@@ -98,7 +98,7 @@ ORDER BY 1, 2;
 ```
 
 #### Encounter Class Distribution
-Percentage of encounters by class (ambulatory, outpatient, wellness, urgent care, emergency, inpatient):
+Encounters count by class (ambulatory, outpatient, wellness, urgent care, emergency, inpatient):
 
 ```sql
 SELECT 
