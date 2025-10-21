@@ -114,7 +114,49 @@ FROM `maven_db.encounters`
 GROUP BY 1
 ORDER BY 1;
 ```
+#### Encounter Class Distribution by gender and age
 
+```sql
+WITH encounter_age AS (SELECT 
+                        DATE_DIFF(CURRENT_DATE(),pa.BIRTHDATE, YEAR) AS AGE,
+                        pa.GENDER,
+                        en.ENCOUNTERCLASS,
+                        COUNT(en.Id) AS count_encounter
+                      FROM `maven_db.encounters` en
+                        LEFT JOIN `maven_db.patients` pa
+                        ON en.PATIENT =pa.Id
+                      GROUP BY 1,2,3
+                      ORDER BY 1,2),
+
+      encounter_AgeRange AS (SELECT 
+                                  GENDER,
+                                  ENCOUNTERCLASS,
+                                  CASE 
+                                      WHEN AGE <40 THEN '30-39'
+                                      WHEN AGE <50 THEN '40-49'
+                                      WHEN AGE <60 THEN '50-59'
+                                      WHEN AGE <70 THEN '60-69'
+                                      WHEN AGE <80 THEN '70-79'
+                                      WHEN AGE <90 THEN '80-89'
+                                      WHEN AGE <100 THEN '90-99'
+                                      ELSE '100+'
+                                      END AS AGE_RANGE,
+                                    count_encounter
+                            FROM encounter_age)
+
+SELECT 
+  GENDER,
+  AGE_RANGE,
+  SUM(CASE WHEN ENCOUNTERCLASS = 'outpatient' THEN count_encounter ELSE 0 END) AS outpatient, 
+  SUM(CASE WHEN ENCOUNTERCLASS = 'ambulatory' THEN count_encounter ELSE 0 END) AS ambulatory,
+  SUM(CASE WHEN ENCOUNTERCLASS = 'inpatient' THEN count_encounter ELSE 0 END) AS inpatient,
+  SUM(CASE WHEN ENCOUNTERCLASS = 'urgentcare' THEN count_encounter ELSE 0 END) AS urgentcare,
+  SUM(CASE WHEN ENCOUNTERCLASS = 'wellness' THEN count_encounter ELSE 0 END) AS wellness,    
+  SUM(CASE WHEN ENCOUNTERCLASS = 'emergency' THEN count_encounter ELSE 0 END) AS emergency
+FROM   encounter_AgeRange
+GROUP BY 1,2
+ORDER BY 1,2;
+```
 ---
 
 ### 💰 Cost & Coverage Insights
@@ -195,16 +237,15 @@ LOS_AgeGroup AS (SELECT
                   GENDER,
                   CLASS,
                   CASE
-                    WHEN age >=31 AND age <40 THEN '31-40'
-                    WHEN age >=41 AND age <50 THEN '41-50'
-                    WHEN age >=51 AND age <60 THEN '41-60'
-                    WHEN age >=61 AND age <70 THEN '61-70'
-                    WHEN age >=71 AND age <80 THEN '71-80'
-                    WHEN age >=81 AND age <90 THEN '81-90'
-                    WHEN age >=91 AND age <100 THEN '91-100'
-                    WHEN age >100 THEN '>100'
-                    ELSE 'CHECK'
-                    END AS Age_Group,
+                      WHEN AGE <40 THEN '30-39'
+                      WHEN AGE <50 THEN '40-49'
+                      WHEN AGE <60 THEN '50-59'
+                      WHEN AGE <70 THEN '60-69'
+                      WHEN AGE <80 THEN '70-79'
+                      WHEN AGE <90 THEN '80-89'
+                      WHEN AGE <100 THEN '90-99'
+                      ELSE '100+'
+                      END AS AGE_RANGE,
                   ROUND(AVG(LOS_AGE.Avg_Length_of_Stay_hours)) DESC)
 SELECT
   GENDER,
@@ -280,7 +321,11 @@ WHERE PATIENT = '1712d26d-822d-1e3a-2267-0a9dba31d7c8';
 ---
 
 ## 📈 Key Insights Summary
-- Males aged **31–40** have the **highest average LOS**, especially for **ambulatory** encounters.  
+- Total encounters: Females recorded 14,924 encounters, slightly higher than males at 12,967.
+- The 90–99 age range shows the highest encounter count (11,030 total) across both genders.
+- Encounters increase sharply from age 70 onward, suggesting heavier healthcare usage in older populations.
+- Males aged **30–39** have the **highest average LOS**, especially for **ambulatory** encounters.
+- Females aged **70–79** have the **highest average LOS** in inpatient group.   
 - Approximately **49% of encounters** had **zero payer coverage**.  
 - The **most common procedures** are relatively low-cost, while a few specialized ones drive the highest average base costs.  
 - A subset of patients shows **multiple readmissions within 30 days**, indicating potential for targeted care interventions.  
