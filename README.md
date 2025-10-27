@@ -191,6 +191,7 @@ GROUP BY 1
 ORDER BY num_procedures DESC
 LIMIT 10;
 ```
+![Top Procedures](Image/top_procedures_encounter.png)
 
 #### Average Claim Cost by Payer
 Compare average total claim costs across payers:
@@ -205,6 +206,7 @@ LEFT JOIN `maven_db.payers` pa
 GROUP BY 1
 ORDER BY avg_total_claim_cost DESC;
 ```
+![Top Procedures](Image/avg_cost_payer.png)
 
 #### Top 10 Procedures by Cost
 Identify the highest-cost procedures and their frequency:
@@ -219,7 +221,7 @@ GROUP BY 1
 ORDER BY base_cost DESC
 LIMIT 10;
 ```
-
+![Top Procedures](Image/top_procedures_cost.png)
 ---
 
 ### ⏱️ Length of Stay (LOS) Analysis
@@ -265,7 +267,6 @@ GROUP BY 1,2
 ORDER BY SUM(AVG_LOS) DESC;
 
 ```
-
 ---
 
 ### 🔁 Readmissions & Follow-up Visits
@@ -291,6 +292,7 @@ FROM (
 ) AS re_admission
 WHERE interval_admission < 30;
 ```
+![Readmission Analysis](Image/readmission_30days.png)
 
 #### Most Frequently Readmitted Patients
 
@@ -314,6 +316,7 @@ FROM (
 GROUP BY 1
 ORDER BY 2 DESC;
 ```
+![Readmission Analysis](Image/readmission_patient.png)
 
 #### Patient Details FOR ABOVE CASE
 Once I know the most frequently readmitted patient, I can use where clause to see more details about this patient:
@@ -323,7 +326,7 @@ SELECT *
 FROM `maven_db.encounters`
 WHERE PATIENT = '1712d26d-822d-1e3a-2267-0a9dba31d7c8';
 ```
-
+![Readmission Analysis](Image/readmission_patient_no1.png)
 ---
 
 ## 📈 Key Insights Summary
