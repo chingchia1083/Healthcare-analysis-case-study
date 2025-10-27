@@ -96,6 +96,7 @@ FROM `maven_db.encounters`
 GROUP BY 1, 2
 ORDER BY 1, 2;
 ```
+![Encounter Volume Trend](Image/encounter_volume.png)
 
 #### Encounter Class Distribution
 Encounters count by class (ambulatory, outpatient, wellness, urgent care, emergency, inpatient):
