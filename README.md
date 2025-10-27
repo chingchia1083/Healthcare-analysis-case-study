@@ -115,6 +115,8 @@ FROM `maven_db.encounters`
 GROUP BY 1
 ORDER BY 1;
 ```
+![Encounter by Class](Image/encounter_class.png)
+
 #### Encounter Class Distribution by gender and age
 
 ```sql
@@ -158,6 +160,8 @@ FROM   encounter_AgeRange
 GROUP BY 1,2
 ORDER BY 1,2;
 ```
+![Encounter by Age & Gender](Image/encounter_age_gender.png)
+
 ---
 
 ### 💰 Cost & Coverage Insights
@@ -172,6 +176,7 @@ SELECT
   ROUND(SUM(CASE WHEN PAYER_COVERAGE = 0 THEN 1 ELSE 0 END) / COUNT(*), 2) AS pct_zero_payer_coverage
 FROM `maven_db.encounters`;
 ```
+![Zero Payer Coverage Card](Image/zero_payer_card.png)
 
 #### Top 10 Procedures by Frequency
 List the most common procedures and their average base cost:
